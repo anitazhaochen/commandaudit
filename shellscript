@@ -1,0 +1,6 @@
+#!/bin/bash
+find . -name "*.js" | while read i
+do
+      echo $i
+      mv ${i:2:3}.js ${i:2:3}.json
+done

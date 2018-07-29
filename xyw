@@ -1,0 +1,191 @@
+#!/usr/local/bin/python
+#-*- coding:UTF-8 -*-
+import HTMLParser
+import urlparse
+import urllib
+import urllib2
+import cookielib
+import string
+import re
+import  md5
+
+
+
+
+def passwordmd5(src):
+
+    m1 = md5.new()
+    m1.update(src)
+    return m1.hexdigest()
+
+
+def random():
+
+    url = 'http://210.30.1.114:8089/Self/RandomCodeAction.action'
+
+    headers = {'Host': '210.30.1.114:8089',
+               'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+               'X-Requested-With': 'XMLHttpRequest',
+               'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/602.4.8 (KHTML, like Gecko) Version/10.0.3 Safari/602.4.8',
+               'Upgrade-Insecure-Requests': '1',
+               'Referer': 'http://210.30.1.114:8089/Self/nav_login'}
+    req = urllib2.Request(url,headers=headers)
+
+    res_data = urllib2.urlopen(req)
+
+
+def offline():
+    offUrl = 'http://210.30.1.114:8089/Self/nav_offLine'
+    strtooffurl = 'http://210.30.1.114:8089/Self/tooffline'
+
+    request = urllib2.Request(offUrl)
+    response = urllib2.urlopen(request)
+    text = response.read()
+    #str = text[5858:5863]
+    str = re.findall(r'<td style="display:none;">(.+?)</td>',text,re.S)
+    count = 0
+    for s in str:
+        count = count + 1
+        a = [strtooffurl, 'fldsessionid={}'.format(s)]
+        b = '?'
+        str = b.join(a)
+        request = urllib2.Request(str)
+        urllib2.urlopen(request)
+
+    print count,'sucess'
+
+def login(userid,password):
+    hosturl = 'http://210.30.1.114:8089/Self/nav_login'
+
+    posturl = 'http://210.30.1.114:8089/Self/LoginAction.action'
+
+    cj = cookielib.LWPCookieJar()
+    cookie_support = urllib2.HTTPCookieProcessor(cj)
+    opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
+    urllib2.install_opener(opener)
+    h = urllib2.urlopen(hosturl)
+    html = h.read()
+    #checkcode = html[2990:2994]
+    checkcode = re.findall(r'var checkcode="(.+?)"',html,re.S)
+    checkcode = checkcode[0]
+    random()
+    headers = {
+               'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+               'Accept-Language': 'zh-cn',
+               'Content-Type': 'application/x-www-form-urlencoded',
+               'Origin': 'http://210.30.1.114:8089',
+               'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/602.4.8 (KHTML, like Gecko) Version/10.0.3 Safari/602.4.8',
+               'Upgrade-Insecure-Requests': '1',
+               'Referer': 'http://210.30.1.114:8089/Self/LoginAction.action',
+               }
+    password = passwordmd5(password)
+    postData = {'account':userid, 'password':password, 'code': '', 'checkcode': checkcode,
+                'Submit': '登 录'}
+    postData = urllib.urlencode(postData)
+    request = urllib2.Request(posturl, postData, headers)
+    response = urllib2.urlopen(request)
+
+def stopserver():
+    url = 'http://210.30.1.114:8089/Self/nav_selfstopNow'
+    req = urllib2.Request(url)
+    urllib2.urlopen(req)
+
+def startserver():
+    url = 'http://210.30.1.114:8089/Self/nav_SelfReopenNow'
+    req = urllib2.Request(url)
+    urllib2.urlopen(req)
+
+def changepassword():
+
+    fldpassword = '123456789'
+    newpassword = '1234567890'
+    renewpassword = '1234567890'
+    dic = {'user.flduserpassword':fldpassword,
+           'user.fldmd5hehai':newpassword,
+           'user.fldextend':renewpassword,
+           'Submit':'提 交'}
+    dic = urllib.urlencode(dic)
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-cn',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': 'http://210.30.1.114:8089',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/602.4.8 (KHTML, like Gecko) Version/10.0.3 Safari/602.4.8',
+        'Upgrade-Insecure-Requests': '1',
+        'Referer': 'http://210.30.1.114:8089/Self/nav_changePsw',
+    }
+    url = 'http://210.30.1.114:8089/Self/ChangePswAction.action'
+    req = urllib2.Request(url,dic,headers)
+    urllib2.urlopen(req)
+
+def getll():
+    url = 'http://210.30.1.114:8089/Self/nav_getUserInfo'
+    req = urllib2.Request(url)
+    text = urllib2.urlopen(req)
+    text = text.read()
+    #text = text[6045:6075]
+
+    allfinds2 = re.findall(
+        r'<td class="t_l">本月流量（MB）</td><!-- 0005_PersonList.jsp=本月流量（MB） -->\r\n(.+?)</td>', text, re.S)
+    str = allfinds2[0]
+    str = str[-20:]
+    return  str
+
+
+
+def getjz():
+    url = 'http://210.30.1.114:8089/Self/MonthPayAction.action'
+
+    dic = {'type':'1','year':'2017'}
+    dic = urllib.urlencode(dic)
+    req = urllib2.Request(url,dic)
+    text = urllib2.urlopen(req)
+    text = text.read()
+    text = text[4735:4745]
+    return text
+
+userid = raw_input("账号：")
+password = raw_input("密码：")
+
+
+
+
+print "1.查询流量\n" \
+      "2.强制离线\n" \
+      "3.一键免流\n" \
+      "4.修改密码"
+
+
+op = int (input("选择服务选项："))
+
+login(userid,password)
+
+if op == 1:
+   text = getll()
+   text = text.strip()
+   print "已用流量：",text,'MB',
+elif op == 2:
+    offline()
+elif op == 3:
+    stopserver()
+    startserver()
+elif op == 4:
+
+    for i in range(0,3):
+        np = raw_input("新密码：")
+        rnp = raw_input("再次输入新密码：")
+        if np == rnp:
+            changepassword(password,np,rnp)
+            break
+        else:
+            print '两次密码输入不一致，重新输入'
+else:
+    print "Error，输入数字"
+
+
+
+
+
+
+
+
